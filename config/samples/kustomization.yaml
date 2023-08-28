@@ -1,4 +1,0 @@
-## Append samples of your project ##
-resources:
-- xy.io_v1_serverlog.yaml
-#+kubebuilder:scaffold:manifestskustomizesamples
