@@ -18,10 +18,12 @@ package controller
 
 import (
 	"context"
-
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	logv1 "4yxy.io/log-collector/api/v1"
@@ -48,8 +50,51 @@ type ServerLogReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
-
-	// TODO(user): your logic here
+	serverLog := &logv1.ServerLog{}
+	var pod v1.Pod
+	println(req.Name)
+	if err := r.Get(ctx, req.NamespacedName, &pod); err != nil {
+		//不存在，则不处理
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, nil
+	}
+	logDir := pod.GetObjectMeta().GetAnnotations()["server.xy.io/logDir"]
+	println("logDir: ", logDir)
+	if logDir == "" {
+		logDir = "/data/log"
+	}
+	if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
+		//不存在说明需要创建
+		if errors.IsNotFound(err) {
+			newServerLog := &logv1.ServerLog{}
+			newServerLog.Spec.Dir = logDir
+			newServerLog.Namespace = req.Namespace
+			newServerLog.Name = req.Name
+			newServerLog.Status.Phase = "Init"
+			//newServerLog.GetObjectMeta().SetFinalizers()
+			if err := controllerutil.SetControllerReference(&pod, newServerLog, r.Scheme); err != nil {
+				return ctrl.Result{}, err
+			}
+			if err := r.Create(ctx, newServerLog); err != nil {
+				if errors.IsAlreadyExists(err) {
+					if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
+						return ctrl.Result{}, err
+					}
+				}
+			}
+			return ctrl.Result{}, err
+		}
+	}
+	//日志目录变更，更改serverLog
+	if logDir != serverLog.Spec.Dir {
+		serverLog.Spec.Dir = logDir
+		err := r.Update(ctx, serverLog)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -57,6 +102,7 @@ func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // SetupWithManager sets up the controller with the Manager.
 func (r *ServerLogReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&logv1.ServerLog{}).
+		For(&v1.Pod{}).
+		Owns(&logv1.ServerLog{}).
 		Complete(r)
 }
