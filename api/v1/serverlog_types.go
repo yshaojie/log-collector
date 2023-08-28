@@ -28,8 +28,9 @@ type ServerLogSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of ServerLog. Edit serverlog_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Dir        string `json:"dir,omitempty"`
+	FileFilter string `json:"fileFilter,omitempty"`
+	Pattern    string `json:"pattern,omitempty"`
 }
 
 // ServerLogStatus defines the observed state of ServerLog

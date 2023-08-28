@@ -34,9 +34,11 @@ spec:
           spec:
             description: ServerLogSpec defines the desired state of ServerLog
             properties:
-              foo:
-                description: Foo is an example field of ServerLog. Edit serverlog_types.go
-                  to remove/update
+              dir:
+                type: string
+              fileFilter:
+                type: string
+              pattern:
                 type: string
             type: object
           status:
