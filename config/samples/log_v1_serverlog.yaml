@@ -1,0 +1,12 @@
+apiVersion: log.4yxy.io/v1
+kind: ServerLog
+metadata:
+  labels:
+    app.kubernetes.io/name: serverlog
+    app.kubernetes.io/instance: serverlog-sample
+    app.kubernetes.io/part-of: log-collector
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: log-collector
+  name: serverlog-sample
+spec:
+  # TODO(user): Add fields here

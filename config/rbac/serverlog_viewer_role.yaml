@@ -1,0 +1,27 @@
+# permissions for end users to view serverlogs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: serverlog-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: log-collector
+    app.kubernetes.io/part-of: log-collector
+    app.kubernetes.io/managed-by: kustomize
+  name: serverlog-viewer-role
+rules:
+- apiGroups:
+  - log.4yxy.io
+  resources:
+  - serverlogs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - log.4yxy.io
+  resources:
+  - serverlogs/status
+  verbs:
+  - get
