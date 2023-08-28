@@ -21,6 +21,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -32,7 +33,8 @@ import (
 // ServerLogReconciler reconciles a ServerLog object
 type ServerLogReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme        *runtime.Scheme
+	EventRecorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=log.4yxy.io,resources=serverlogs,verbs=get;list;watch;create;update;patch;delete
@@ -84,6 +86,7 @@ func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					}
 				}
 			}
+			r.EventRecorder.Event(newServerLog, "Normal", "Created", "create server log")
 			return ctrl.Result{}, err
 		}
 	}
@@ -91,6 +94,7 @@ func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if logDir != serverLog.Spec.Dir {
 		serverLog.Spec.Dir = logDir
 		err := r.Update(ctx, serverLog)
+
 		if err != nil {
 			return ctrl.Result{}, err
 		}
