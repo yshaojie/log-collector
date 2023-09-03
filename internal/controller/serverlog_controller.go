@@ -67,29 +67,32 @@ func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if logDir == "" {
 		logDir = "/data/log"
 	}
+
 	if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
-		//不存在说明需要创建
-		if errors.IsNotFound(err) {
-			newServerLog := &logv1.ServerLog{}
-			newServerLog.Spec.Dir = logDir
-			newServerLog.Namespace = req.Namespace
-			newServerLog.Name = req.Name
-			newServerLog.Status.Phase = "Init"
-			//newServerLog.GetObjectMeta().SetFinalizers()
-			if err := controllerutil.SetControllerReference(&pod, newServerLog, r.Scheme); err != nil {
-				return ctrl.Result{}, err
-			}
-			if err := r.Create(ctx, newServerLog); err != nil {
-				if errors.IsAlreadyExists(err) {
-					if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
-						return ctrl.Result{}, err
-					}
-				}
-			}
-			r.EventRecorder.Event(newServerLog, "Normal", "Created", "create server log")
+		if !errors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
+		//不存在说明需要创建
+		newServerLog := &logv1.ServerLog{}
+		newServerLog.Spec.Dir = logDir
+		newServerLog.Namespace = req.Namespace
+		newServerLog.Name = req.Name
+		newServerLog.Status.Phase = "Init"
+		//newServerLog.GetObjectMeta().SetFinalizers()
+		if err := controllerutil.SetControllerReference(&pod, newServerLog, r.Scheme); err != nil {
+			return ctrl.Result{}, err
+		}
+		if err := r.Create(ctx, newServerLog); err != nil {
+			if errors.IsAlreadyExists(err) {
+				if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+			return ctrl.Result{}, err
+		}
+		r.EventRecorder.Event(newServerLog, "Normal", "Created", "create server log")
 	}
+
 	//日志目录变更，更改serverLog
 	if logDir != serverLog.Spec.Dir {
 		serverLog.Spec.Dir = logDir
