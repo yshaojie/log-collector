@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	logv1 "4yxy.io/log-collector/api/v1"
 	"context"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -25,9 +26,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	logv1 "4yxy.io/log-collector/api/v1"
 )
 
 // ServerLogReconciler reconciles a ServerLog object
@@ -51,58 +49,87 @@ type ServerLogReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
 	serverLog := &logv1.ServerLog{}
 	var pod v1.Pod
 	println(req.Namespace, req.Name)
 	if err := r.Get(ctx, req.NamespacedName, &pod); err != nil {
 		//不存在，则不处理
 		if errors.IsNotFound(err) {
+			result, err := r.processDelete(ctx, req)
+			if err != nil {
+				return result, err
+			}
 			return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
-	logDir := pod.GetObjectMeta().GetAnnotations()["server.xy.io/logDir"]
-	println("logDir: ", logDir)
-	if logDir == "" {
-		logDir = "/data/log"
+
+	//正在删除状态，不处理
+	if pod.GetObjectMeta().GetDeletionTimestamp() != nil {
+		return ctrl.Result{}, nil
 	}
 
 	if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
 		if !errors.IsNotFound(err) {
-			return ctrl.Result{}, err
+			//不存在说明需要创建
+			return r.processCreate(ctx, req, pod)
 		}
-		//不存在说明需要创建
-		newServerLog := &logv1.ServerLog{}
-		newServerLog.Spec.Dir = logDir
-		newServerLog.Namespace = req.Namespace
-		newServerLog.Name = req.Name
-		newServerLog.Status.Phase = "Init"
-		//newServerLog.GetObjectMeta().SetFinalizers()
-		if err := controllerutil.SetControllerReference(&pod, newServerLog, r.Scheme); err != nil {
-			return ctrl.Result{}, err
-		}
-		if err := r.Create(ctx, newServerLog); err != nil {
-			if errors.IsAlreadyExists(err) {
-				if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
-					return ctrl.Result{}, err
-				}
-			}
-			return ctrl.Result{}, err
-		}
-		r.EventRecorder.Event(newServerLog, "Normal", "Created", "create server log")
+		return ctrl.Result{}, errors.NewInternalError(err)
 	}
+	return r.processUpdate(ctx, serverLog, pod)
+}
 
-	//日志目录变更，更改serverLog
-	if logDir != serverLog.Spec.Dir {
-		serverLog.Spec.Dir = logDir
-		err := r.Update(ctx, serverLog)
+func getLogDir(pod v1.Pod) string {
+	logDir := pod.GetObjectMeta().GetAnnotations()["server.xy.io/logDir"]
+	if logDir == "" {
+		logDir = "/data/log"
+	}
+	return logDir
+}
 
+func (r *ServerLogReconciler) processCreate(ctx context.Context, req ctrl.Request, pod v1.Pod) (ctrl.Result, error) {
+
+	newServerLog := &logv1.ServerLog{}
+	newServerLog.Spec.Dir = getLogDir(pod)
+	newServerLog.Namespace = pod.GetNamespace()
+	newServerLog.Name = pod.GetName()
+	newServerLog.Status.Phase = "Init"
+	//newServerLog.GetObjectMeta().SetFinalizers()
+	if err := controllerutil.SetControllerReference(&pod, newServerLog, r.Scheme); err != nil {
+		return ctrl.Result{}, errors.NewInternalError(err)
+	}
+	if err := r.Create(ctx, newServerLog); err != nil {
+		err := r.Create(ctx, newServerLog)
 		if err != nil {
+			println(err.Error())
 			return ctrl.Result{}, err
 		}
+		if errors.IsAlreadyExists(err) {
+			serverLog := &logv1.ServerLog{}
+			if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, errors.NewInternalError(err)
 	}
 
+	r.EventRecorder.Event(newServerLog, "Normal", "Created", "create server log")
+	return ctrl.Result{}, nil
+}
+
+func ownerForPod(name string, log *logv1.ServerLog) bool {
+	if log == nil {
+		return false
+	}
+	for _, owner := range log.OwnerReferences {
+		if owner.Name == name && owner.Kind == "Pod" {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *ServerLogReconciler) processDelete(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
@@ -113,4 +140,22 @@ func (r *ServerLogReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&v1.Pod{}).
 		Owns(&logv1.ServerLog{}).
 		Complete(r)
+}
+
+func (r *ServerLogReconciler) processUpdate(ctx context.Context, serverLog *logv1.ServerLog, pod v1.Pod) (ctrl.Result, error) {
+	if !serverLogChange(serverLog, pod) {
+		return ctrl.Result{}, nil
+	}
+	serverLog.Spec.Dir = getLogDir(pod)
+	err := r.Update(context.TODO(), serverLog)
+	return ctrl.Result{}, err
+}
+
+func serverLogChange(log *logv1.ServerLog, pod v1.Pod) bool {
+	logDir := getLogDir(pod)
+	if logDir != log.Spec.Dir {
+		return true
+	}
+
+	return false
 }
