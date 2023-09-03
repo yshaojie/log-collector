@@ -11,6 +11,8 @@ spec:
     kind: ServerLog
     listKind: ServerLogList
     plural: serverlogs
+    shortNames:
+    - sl
     singular: serverlog
   scope: Namespaced
   versions:
@@ -32,7 +34,10 @@ spec:
           metadata:
             type: object
           spec:
-            description: ServerLogSpec defines the desired state of ServerLog
+            description: 'EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN! NOTE:
+              json tags are required.  Any new fields you add must have json tags
+              for the fields to be serialized. ServerLogSpec defines the desired state
+              of ServerLog'
             properties:
               dir:
                 type: string

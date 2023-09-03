@@ -54,7 +54,7 @@ func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	_ = log.FromContext(ctx)
 	serverLog := &logv1.ServerLog{}
 	var pod v1.Pod
-	println(req.Name)
+	println(req.Namespace, req.Name)
 	if err := r.Get(ctx, req.NamespacedName, &pod); err != nil {
 		//不存在，则不处理
 		if errors.IsNotFound(err) {
@@ -105,6 +105,7 @@ func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ServerLogReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	//Pod为ServerLog的ownerReference，所以需要监听Pod和ServerLog
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Pod{}).
 		Owns(&logv1.ServerLog{}).
