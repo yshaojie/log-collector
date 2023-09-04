@@ -1,4 +1,4 @@
-module 4yxy.io/log-collector
+module github.com/yshaojie/log-collector
 
 go 1.20
 
