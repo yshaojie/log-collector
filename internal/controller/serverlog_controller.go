@@ -17,8 +17,8 @@ limitations under the License.
 package controller
 
 import (
-	logv1 "4yxy.io/log-collector/api/v1"
 	"context"
+	logv1 "github.com/yshaojie/log-collector/api/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
