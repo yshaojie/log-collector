@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	v1 "k8s.io/client-go/listers/apps/v1"
 	"k8s.io/client-go/tools/cache"
+	"strings"
 	"time"
 )
 
@@ -51,7 +52,10 @@ func NewFilteredServerLogInformer(client kubernetes.Interface, namespace string,
 				}
 
 				result := &apiv1.ServerLogList{}
-				err := client.DiscoveryV1().RESTClient().Get().
+				segments := []string{"apis", apiv1.GroupVersion.Group, apiv1.GroupVersion.Version}
+				err := client.AppsV1().RESTClient().Get().
+					//偷懒的做法，正常应该生成 serverLog的client
+					AbsPath(strings.Join(segments, "/")).
 					Namespace(namespace).
 					Resource("serverlogs").
 					VersionedParams(&options, scheme.ParameterCodec).
@@ -69,7 +73,10 @@ func NewFilteredServerLogInformer(client kubernetes.Interface, namespace string,
 					timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
 				}
 				opts.Watch = true
-				return client.DiscoveryV1().RESTClient().Get().
+				//apiv1.GroupVersion.Group .
+				segments := []string{"apis", apiv1.GroupVersion.Group, apiv1.GroupVersion.Version}
+				return client.AppsV1().RESTClient().Get().
+					AbsPath(strings.Join(segments, "/")).
 					Namespace(namespace).
 					Resource("serverlogs").
 					VersionedParams(&opts, scheme.ParameterCodec).
@@ -93,4 +100,8 @@ func (f *serverLogInformer) Informer() cache.SharedIndexInformer {
 
 func (f *serverLogInformer) Lister() v12.ServerLogLister {
 	return v12.NewServerLogLister(f.Informer().GetIndexer())
+}
+
+func New(factory internalinterfaces.SharedInformerFactory, tweakListOptions internalinterfaces.TweakListOptionsFunc, namespace string) *serverLogInformer {
+	return &serverLogInformer{factory: factory, tweakListOptions: tweakListOptions, namespace: namespace}
 }
