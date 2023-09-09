@@ -3,9 +3,12 @@ package v1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
 var (
+	scheme = runtime.NewScheme()
 	// SchemeBuilder points to a list of functions added to Scheme.
 	SchemeBuilder1     = runtime.NewSchemeBuilder(addKnownTypes)
 	localSchemeBuilder = &SchemeBuilder1
@@ -21,4 +24,11 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	)
 	metav1.AddToGroupVersion(scheme, GroupVersion)
 	return nil
+}
+
+func init() {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+	utilruntime.Must(AddToScheme1(scheme))
+	//+kubebuilder:scaffold:scheme
 }
