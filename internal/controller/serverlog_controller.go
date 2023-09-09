@@ -70,7 +70,7 @@ func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
-		if !errors.IsNotFound(err) {
+		if errors.IsNotFound(err) {
 			//不存在说明需要创建
 			return r.processCreate(ctx, req, pod)
 		}
