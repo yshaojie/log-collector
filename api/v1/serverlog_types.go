@@ -62,4 +62,5 @@ type ServerLogList struct {
 
 func init() {
 	SchemeBuilder.Register(&ServerLog{}, &ServerLogList{})
+	println("aaaaaaaaaaaaaaaaaaaaaaaaa")
 }
