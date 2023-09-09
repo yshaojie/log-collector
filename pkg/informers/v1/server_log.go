@@ -10,7 +10,6 @@ import (
 	"k8s.io/client-go/informers/internalinterfaces"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	v1 "k8s.io/client-go/listers/apps/v1"
 	"k8s.io/client-go/tools/cache"
 	"strings"
 	"time"
@@ -20,7 +19,7 @@ import (
 // Deployments.
 type ServerLogInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1.DeploymentLister
+	Lister() v12.ServerLogLister
 }
 
 type serverLogInformer struct {
