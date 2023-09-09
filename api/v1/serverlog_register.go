@@ -22,6 +22,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ServerLog{},
 		&ServerLogList{},
 	)
+	println("init -----------------------------")
 	metav1.AddToGroupVersion(scheme, GroupVersion)
 	return nil
 }
