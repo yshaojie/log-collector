@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	logv1 "github.com/yshaojie/log-collector/api/v1"
+	"github.com/yshaojie/log-collector/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -51,7 +52,6 @@ type ServerLogReconciler struct {
 func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	serverLog := &logv1.ServerLog{}
 	var pod v1.Pod
-	println(req.Namespace, req.Name)
 	if err := r.Get(ctx, req.NamespacedName, &pod); err != nil {
 		//不存在，则不处理
 		if errors.IsNotFound(err) {
@@ -63,7 +63,6 @@ func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		return ctrl.Result{}, err
 	}
-
 	//正在删除状态，不处理
 	if pod.GetObjectMeta().GetDeletionTimestamp() != nil {
 		return ctrl.Result{}, nil
@@ -143,12 +142,33 @@ func (r *ServerLogReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *ServerLogReconciler) processUpdate(ctx context.Context, serverLog *logv1.ServerLog, pod v1.Pod) (ctrl.Result, error) {
+
+	//添加Finalizer，用于清理资源
+	if serverLog.ObjectMeta.DeletionTimestamp == nil || serverLog.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !containString(serverLog.ObjectMeta.Finalizers, utils.FinalizerNameAgentHolder) {
+			serverLog.ObjectMeta.Finalizers = append(serverLog.ObjectMeta.Finalizers, utils.FinalizerNameAgentHolder)
+			err := r.Update(ctx, serverLog)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
 	if !serverLogChange(serverLog, pod) {
 		return ctrl.Result{}, nil
 	}
 	serverLog.Spec.Dir = getLogDir(pod)
 	err := r.Update(context.TODO(), serverLog)
 	return ctrl.Result{}, err
+}
+
+func containString(arr []string, str string) bool {
+	for _, s := range arr {
+		if s == str {
+			return true
+		}
+	}
+	return false
 }
 
 func serverLogChange(log *logv1.ServerLog, pod v1.Pod) bool {

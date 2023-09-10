@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -54,17 +55,20 @@ var _ webhook.Validator = &ServerLog{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *ServerLog) ValidateCreate() (admission.Warnings, error) {
 	serverloglog.Info("validate create", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object creation.
-	return nil, nil
+	return r.validateCommonField()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *ServerLog) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	serverloglog.Info("validate update", "name", r.Name)
+	return r.validateCommonField()
+}
 
-	// TODO(user): fill in your validation logic upon object update.
-	return nil, nil
+func (r *ServerLog) validateCommonField() (admission.Warnings, error) {
+	if len(r.Spec.Dir) < 2 {
+		return admission.Warnings{"waring1...", "waring2..."}, errors.New("spec.dir length< 2")
+	}
+	return admission.Warnings{"new server log"}, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type

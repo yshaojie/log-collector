@@ -27,6 +27,7 @@ type ServerLogSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// +kubebuilder:validation:MinLength=2
 	Dir        string `json:"dir,omitempty"`
 	FileFilter string `json:"fileFilter,omitempty"`
 	Pattern    string `json:"pattern,omitempty"`
@@ -62,5 +63,4 @@ type ServerLogList struct {
 
 func init() {
 	SchemeBuilder.Register(&ServerLog{}, &ServerLogList{})
-	println("aaaaaaaaaaaaaaaaaaaaaaaaa")
 }
