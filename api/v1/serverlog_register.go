@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	scheme1 = runtime.NewScheme()
+	//scheme1 = runtime.NewScheme()
 	// SchemeBuilder points to a list of functions added to Scheme.
 	SchemeBuilder1     = runtime.NewSchemeBuilder(addKnownTypes)
 	localSchemeBuilder = &SchemeBuilder1
@@ -28,7 +28,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 }
 
 func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme1))
+	utilruntime.Must(clientgoscheme.AddToScheme(clientgoscheme.Scheme))
 
-	utilruntime.Must(AddToScheme1(scheme1))
+	utilruntime.Must(AddToScheme1(clientgoscheme.Scheme))
 }
