@@ -116,18 +116,6 @@ func (r *ServerLogReconciler) processCreate(ctx context.Context, req ctrl.Reques
 	return ctrl.Result{}, nil
 }
 
-func ownerForPod(name string, log *logv1.ServerLog) bool {
-	if log == nil {
-		return false
-	}
-	for _, owner := range log.OwnerReferences {
-		if owner.Name == name && owner.Kind == "Pod" {
-			return true
-		}
-	}
-	return false
-}
-
 func (r *ServerLogReconciler) processDelete(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
