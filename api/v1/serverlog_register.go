@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	//scheme1 = runtime.NewScheme()
 	// SchemeBuilder points to a list of functions added to Scheme.
 	SchemeBuilder1     = runtime.NewSchemeBuilder(addKnownTypes)
 	localSchemeBuilder = &SchemeBuilder1
@@ -22,11 +21,11 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ServerLog{},
 		&ServerLogList{},
 	)
-	println("init meeeeeeeeeeeeeeeeeeeeeeee")
 	metav1.AddToGroupVersion(scheme, GroupVersion)
 	return nil
 }
 
 func init() {
+	//将ServerLog ServerLogList注册到clientgoscheme.Scheme上
 	utilruntime.Must(AddToScheme1(clientgoscheme.Scheme))
 }
