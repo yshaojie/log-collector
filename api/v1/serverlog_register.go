@@ -22,13 +22,11 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ServerLog{},
 		&ServerLogList{},
 	)
-	println("init ---------------dd--------------")
+	println("init meeeeeeeeeeeeeeeeeeeeeeee")
 	metav1.AddToGroupVersion(scheme, GroupVersion)
 	return nil
 }
 
 func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(clientgoscheme.Scheme))
-
 	utilruntime.Must(AddToScheme1(clientgoscheme.Scheme))
 }
