@@ -29,6 +29,7 @@ type ServerLogSpec struct {
 
 	// +kubebuilder:validation:MinLength=2
 	Dir        string `json:"dir,omitempty"`
+	NodeName   string `json:"nodeName,omitempty"`
 	FileFilter string `json:"fileFilter,omitempty"`
 	Pattern    string `json:"pattern,omitempty"`
 }

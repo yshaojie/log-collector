@@ -116,6 +116,7 @@ func (r *ServerLogReconciler) processCreate(ctx context.Context, req ctrl.Reques
 
 	newServerLog := &logv1.ServerLog{}
 	newServerLog.Spec.Dir = getLogDir(pod)
+	newServerLog.Spec.NodeName = pod.Spec.NodeName
 	newServerLog.Namespace = pod.GetNamespace()
 	newServerLog.Name = pod.GetName()
 	newServerLog.Status.Phase = "Init"
@@ -171,6 +172,10 @@ func (r *ServerLogReconciler) processUpdate(ctx context.Context, serverLog *logv
 
 	if serverLogChange(serverLog, pod) {
 		serverLog.Spec.Dir = getLogDir(pod)
+		needUpdated = true
+	}
+	if serverLog.Spec.NodeName != pod.Spec.NodeName {
+		serverLog.Spec.NodeName = pod.Spec.NodeName
 		needUpdated = true
 	}
 	if needUpdated {
