@@ -27,7 +27,9 @@ import (
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"time"
 )
 
 // ServerLogReconciler reconciles a ServerLog object
@@ -72,17 +74,23 @@ func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if !pod.ObjectMeta.DeletionTimestamp.IsZero() {
 		return ctrl.Result{}, nil
 	}
+	//pod还没有调度，不处理
+	if len(pod.Spec.NodeName) == 0 {
+		return ctrl.Result{}, nil
+	}
 
 	serverLog := &logv1.ServerLog{}
 	if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
 		if errors.IsNotFound(err) {
-			klog.Info("create server log, %v", req.Name)
+			klog.Info("create server log, name=", req.Name)
 			//不存在说明需要创建
-			return r.processCreate(ctx, req, pod)
+			create, err := r.processCreate(ctx, req, pod)
+			return processApiServerError(create, err)
 		}
 		return ctrl.Result{}, errors.NewInternalError(err)
 	}
-	return r.processUpdate(ctx, serverLog, pod)
+	update, err := r.processUpdate(ctx, serverLog, pod)
+	return processApiServerError(update, err)
 }
 
 func getLogDir(pod v1.Pod) string {
@@ -91,6 +99,17 @@ func getLogDir(pod v1.Pod) string {
 		logDir = "/data/log"
 	}
 	return logDir
+}
+
+// processApiServerError 对增删改产生的错误进行处理
+func processApiServerError(result ctrl.Result, err error) (ctrl.Result, error) {
+	if err == nil {
+		return result, err
+	}
+	if errors.IsAlreadyExists(err) || errors.IsConflict(err) {
+		return ctrl.Result{Requeue: true, RequeueAfter: 500 * time.Millisecond}, nil
+	}
+	return result, err
 }
 
 func (r *ServerLogReconciler) processCreate(ctx context.Context, req ctrl.Request, pod v1.Pod) (ctrl.Result, error) {
@@ -131,6 +150,10 @@ func (r *ServerLogReconciler) processDelete(ctx context.Context, req ctrl.Reques
 func (r *ServerLogReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	//Pod为ServerLog的ownerReference，所以需要监听Pod和ServerLog
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(controller.Options{
+			//Reconcile设置并发
+			MaxConcurrentReconciles: 1,
+		}).
 		For(&v1.Pod{}).
 		Owns(&logv1.ServerLog{}).
 		Complete(r)
