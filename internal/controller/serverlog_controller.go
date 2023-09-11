@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -40,7 +41,9 @@ type ServerLogReconciler struct {
 //+kubebuilder:rbac:groups=log.4yxy.io,resources=serverlogs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=log.4yxy.io,resources=serverlogs/finalizers,verbs=update
 
+//额外添加权限
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -52,7 +55,7 @@ type ServerLogReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	serverLog := &logv1.ServerLog{}
+
 	var pod v1.Pod
 	if err := r.Get(ctx, req.NamespacedName, &pod); err != nil {
 		//不存在，则不处理
@@ -66,12 +69,14 @@ func (r *ServerLogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 	//正在删除状态，不处理
-	if pod.GetObjectMeta().GetDeletionTimestamp() != nil {
+	if !pod.ObjectMeta.DeletionTimestamp.IsZero() {
 		return ctrl.Result{}, nil
 	}
 
+	serverLog := &logv1.ServerLog{}
 	if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
 		if errors.IsNotFound(err) {
+			klog.Info("create server log, %v", req.Name)
 			//不存在说明需要创建
 			return r.processCreate(ctx, req, pod)
 		}

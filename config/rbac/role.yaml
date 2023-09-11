@@ -13,6 +13,13 @@ rules:
   - list
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
   - log.4yxy.io
   resources:
   - serverlogs
