@@ -137,24 +137,28 @@ func (r *ServerLogReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *ServerLogReconciler) processUpdate(ctx context.Context, serverLog *logv1.ServerLog, pod v1.Pod) (ctrl.Result, error) {
-
+	needUpdated := false
 	//添加Finalizer，用于清理资源
-	if serverLog.ObjectMeta.DeletionTimestamp == nil || serverLog.ObjectMeta.DeletionTimestamp.IsZero() {
+	if serverLog.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !containString(serverLog.ObjectMeta.Finalizers, utils.FinalizerNameAgentHolder) {
 			serverLog.ObjectMeta.Finalizers = append(serverLog.ObjectMeta.Finalizers, utils.FinalizerNameAgentHolder)
-			err := r.Update(ctx, serverLog)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
+			needUpdated = true
 		}
 	}
 
-	if !serverLogChange(serverLog, pod) {
-		return ctrl.Result{}, nil
+	if serverLogChange(serverLog, pod) {
+		serverLog.Spec.Dir = getLogDir(pod)
+		needUpdated = true
 	}
-	serverLog.Spec.Dir = getLogDir(pod)
-	err := r.Update(context.TODO(), serverLog)
-	return ctrl.Result{}, err
+	if needUpdated {
+		klog.Info("update serverlog ..", " name=", serverLog.Name, " version=", serverLog.ObjectMeta.ResourceVersion)
+		err := r.Update(ctx, serverLog)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func containString(arr []string, str string) bool {
