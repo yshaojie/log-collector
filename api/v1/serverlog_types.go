@@ -52,6 +52,9 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName={sl}
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name="status",type="string"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+
 // ServerLog is the Schema for the serverlogs API
 type ServerLog struct {
 	metav1.TypeMeta   `json:",inline"`
