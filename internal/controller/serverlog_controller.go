@@ -119,7 +119,8 @@ func (r *ServerLogReconciler) processCreate(ctx context.Context, req ctrl.Reques
 	newServerLog.Spec.NodeName = pod.Spec.NodeName
 	newServerLog.Namespace = pod.GetNamespace()
 	newServerLog.Name = pod.GetName()
-	newServerLog.Status.Phase = "Init"
+	newServerLog.Status.Phase = logv1.ServerLogPending
+
 	//newServerLog.GetObjectMeta().SetFinalizers()
 	if err := controllerutil.SetControllerReference(&pod, newServerLog, r.Scheme); err != nil {
 		return ctrl.Result{}, errors.NewInternalError(err)
@@ -138,7 +139,11 @@ func (r *ServerLogReconciler) processCreate(ctx context.Context, req ctrl.Reques
 		}
 		return ctrl.Result{}, errors.NewInternalError(err)
 	}
-
+	newServerLog.Status.Phase = logv1.ServerLogPending
+	err := r.Status().Update(ctx, newServerLog)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	r.EventRecorder.Event(newServerLog, "Normal", "Created", "create server log")
 	return ctrl.Result{}, nil
 }
