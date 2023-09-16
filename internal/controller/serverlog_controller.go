@@ -128,16 +128,14 @@ func (r *ServerLogReconciler) processCreate(ctx context.Context, req ctrl.Reques
 	if err := r.Create(ctx, newServerLog); err != nil {
 		err := r.Create(ctx, newServerLog)
 		if err != nil {
-			println(err.Error())
+			if errors.IsAlreadyExists(err) {
+				serverLog := &logv1.ServerLog{}
+				if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
 			return ctrl.Result{}, err
 		}
-		if errors.IsAlreadyExists(err) {
-			serverLog := &logv1.ServerLog{}
-			if err := r.Get(ctx, req.NamespacedName, serverLog); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, errors.NewInternalError(err)
 	}
 	newServerLog.Status.Phase = logv1.ServerLogPending
 	err := r.Status().Update(ctx, newServerLog)

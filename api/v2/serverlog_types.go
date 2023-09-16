@@ -37,6 +37,7 @@ type ServerLogSpec struct {
 type ServerLogStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Phase ServerLogPhase `json:"phase,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -50,6 +51,15 @@ type ServerLog struct {
 	Spec   ServerLogSpec   `json:"spec,omitempty"`
 	Status ServerLogStatus `json:"status,omitempty"`
 }
+
+type ServerLogPhase string
+
+// These are the valid statuses of pods.
+const (
+	ServerLogInit      ServerLogPhase = "Init"
+	ServerLogRunning   ServerLogPhase = "Running"
+	ServerLogCompleted ServerLogPhase = "Completed"
+)
 
 //+kubebuilder:object:root=true
 

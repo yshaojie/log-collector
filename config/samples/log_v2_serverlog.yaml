@@ -9,4 +9,5 @@ metadata:
     app.kubernetes.io/created-by: log-collector
   name: serverlog-sample
 spec:
-  # TODO(user): Add fields here
+  dir: ddddddddd
+  nodeName: abdd

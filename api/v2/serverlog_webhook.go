@@ -18,11 +18,7 @@ package v2
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-// log is for logging in this package.
-var serverloglog = logf.Log.WithName("serverlog-resource")
 
 func (r *ServerLog) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
