@@ -21,4 +21,12 @@ resources:
     defaulting: true
     validation: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: 4yxy.io
+  group: log
+  kind: ServerLog
+  path: github.com/yshaojie/log-collector/api/v2
+  version: v2
 version: "3"
