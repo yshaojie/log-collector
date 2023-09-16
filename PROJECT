@@ -6,7 +6,7 @@ domain: 4yxy.io
 layout:
 - go.kubebuilder.io/v4
 projectName: log-collector
-repo: 4yxy.io/log-collector
+repo: github.com/yshaojie/log-collector
 resources:
 - api:
     crdVersion: v1
@@ -15,7 +15,7 @@ resources:
   domain: 4yxy.io
   group: log
   kind: ServerLog
-  path: 4yxy.io/log-collector/api/v1
+  path: github.com/yshaojie/log-collector/api/v1
   version: v1
   webhooks:
     defaulting: true
