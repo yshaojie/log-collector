@@ -8,6 +8,7 @@ import (
 
 // 实现资源版本转换
 var serverloglog = logf.Log.WithName("serverlog-resource")
+var _ conversion.Convertible = &ServerLog{}
 
 func (src *ServerLog) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1.ServerLog)
