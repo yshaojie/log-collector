@@ -15,7 +15,14 @@ func (src *ServerLog) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.Dir = src.Spec.Dir
 	dst.Spec.NodeName = src.Spec.NodeName
 	dst.ObjectMeta = src.ObjectMeta
-	if src.Status.Phase == ServerLogInit || src.Status.Phase == "" {
+	switch src.Status.Phase {
+	case ServerLogInit:
+		dst.Status.Phase = v1.ServerLogPending
+	case ServerLogRunning:
+		dst.Status.Phase = v1.ServerLogRunning
+	case ServerLogCompleted:
+		dst.Status.Phase = v1.ServerLogCompleted
+	default:
 		dst.Status.Phase = v1.ServerLogPending
 	}
 	return nil
@@ -26,7 +33,14 @@ func (dst *ServerLog) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.Dir = src.Spec.Dir
 	dst.Spec.NodeName = src.Spec.NodeName
 	dst.ObjectMeta = src.ObjectMeta
-	if src.Status.Phase == v1.ServerLogPending || src.Status.Phase == "" {
+	switch src.Status.Phase {
+	case v1.ServerLogPending:
+		dst.Status.Phase = ServerLogInit
+	case v1.ServerLogRunning:
+		dst.Status.Phase = ServerLogRunning
+	case v1.ServerLogCompleted:
+		dst.Status.Phase = ServerLogCompleted
+	default:
 		dst.Status.Phase = ServerLogInit
 	}
 	return nil
